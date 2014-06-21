@@ -14,6 +14,9 @@ cmake_policy( SET CMP0015 NEW )
 set(CMAKE_INCLUDE_PATH $CMAKE_INCLUDE_PATH $ENV{INCLUDE})
 set(CMAKE_LIBRARY_PATH $CMAKE_LIBRARY_PATH $ENV{LIB})
 
+# define the path of our additional CMake modules
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Modules/")
+
 # --------------------------------------------
 # Add the folder to the compilation includes path
 # --------------------------------------------
@@ -86,10 +89,11 @@ if( OPENGL_FOUND )
 	include_directories( ${OPENGL_INCLUDE_DIR} )
 	target_link_libraries( A ${OPENGL_gl_LIBRARY} )
 
-	if( CMAKE_SYSTEM_NAME STREQUAL "Linux" )
-		target_link_libraries( A GLEW )
-	elseif( CMAKE_SYSTEM_NAME STREQUAL "Windows" )
-		target_link_libraries( A glew32 )
+	find_package(GLEW  REQUIRED)
+	include_directories(${GLEW_INCLUDE_PATH})
+	target_link_libraries( A ${GLEW_LIBRARY} )
+	
+	if( CMAKE_SYSTEM_NAME STREQUAL "Windows" )
 		target_link_libraries( A SDL2main )
 	endif( CMAKE_SYSTEM_NAME STREQUAL "Linux" )
 

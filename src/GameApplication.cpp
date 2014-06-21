@@ -1,10 +1,11 @@
-#include <GameApplication.hpp>
+﻿#include <GameApplication.hpp>
 
 #include <kT/Graphics/OGL3Device/OGL3Device.hpp>
 #include <kT/Graphics/OGL3Device/OGL3ImmediateContext.hpp>
 #include <kT/Graphics/OGL3Device/OGL3HardwareBuffer.hpp>
 #include <kT/Graphics/OGL3Device/OGL3Shader.hpp>
 #include <kT/Graphics/OGL3Device/OGL3InputLayout.hpp>
+#include <kT/Graphics/OGL3Device/OGL3Texture.hpp>
 
 #include <kT/Core/Clock.hpp>
 #include <kT/Math/Matrix4.hpp>
@@ -16,15 +17,42 @@
 
 #include <iostream>
 
+#include <kT/Window/Window.hpp>
+#include <kT/Graphics/D3D11Device/D3D11Device.hpp>
+#include <kT/Graphics/D3D11Device/D3D11ImmediateContext.hpp>
+#include <kT/Graphics/D3D11Device/D3D11InputLayout.hpp>
+#include <kT/Graphics/D3D11Device/D3D11HardwareBuffer.hpp>
+#include <kT/Graphics/D3D11Device/D3D11SwapChain.hpp>
+#include <kT/Graphics/D3D11Device/D3D11DepthStencilBuffer.hpp>
+#include <kT/Graphics/D3D11Device/D3D11Shader.hpp>
+#include <kT/Graphics/GraphicsDevice/ViewportDesc.hpp>
+
+void APIENTRY debugCallBack(
+	GLenum source,
+	GLenum type,
+	GLenum severity,
+	GLsizei length,
+	const GLchar* message,
+	void* user)
+{
+	std::cout << "[DEBUG]" << message << std::endl;
+}
+
 #define N 20
 #define M 20
 
-struct vert{
-    glm::vec4 pos;
-    glm::vec4 col;
+struct Matrices
+{
+	glm::mat4 Proj;
+	glm::mat4 ModelView;
 };
 
-float frand( int *seed )
+struct vert{
+    glm::vec4 pos;
+    //glm::vec4 col;
+};
+
+static float frand( int *seed )
 {
     union
     {
@@ -55,7 +83,7 @@ GameApplication::GameApplication():
     if(SDL_Init(SDL_INIT_VIDEO) < 0)
         throw ;
 
-    fenetre = SDL_CreateWindow("A", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
+    fenetre = SDL_CreateWindow("A OGL", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
 
     if(fenetre == 0)
         throw ;
@@ -68,6 +96,10 @@ GameApplication::GameApplication():
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
+#ifndef NDEBUG
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
+#endif
+
     contexteOpenGL = SDL_GL_CreateContext(fenetre);
 
     if(contexteOpenGL == 0)
@@ -77,6 +109,8 @@ GameApplication::GameApplication():
         throw ;
 
     SDL_GL_MakeCurrent( fenetre, contexteOpenGL );
+
+	glDebugMessageCallbackAMD( debugCallBack, reinterpret_cast<GLvoid*>(this) );
 
     myContext = new kT::OGL3ImmediateContext(0);
 
@@ -156,7 +190,6 @@ GameApplication::GameApplication():
         36,
         indices );
 
-
     numParticles = 10000;
 
     vert *inParticles = new vert[ numParticles ];
@@ -165,6 +198,7 @@ GameApplication::GameApplication():
     for( size_t i = 0; i < numParticles; i++ )
     {
         float decision = frand(&seed);
+		/*
         if( decision < 0.1f )
             inParticles[i].col = glm::vec4( 1.f, 0.0f, 1.f, 1.0f );
         else if( decision < 0.2f )
@@ -175,7 +209,7 @@ GameApplication::GameApplication():
             inParticles[i].col = glm::vec4( 1.0f, 1.0f, 0.0f, 1.0f );
         else
             inParticles[i].col = glm::vec4( 1.0f, 1.0f, 1.0f, 1.f );
-
+			*/
         inParticles[i].pos = glm::vec4( 20.0f*(frand(&seed)-0.5f), 20.0f*(frand(&seed)-0.5f), 20.0f*(frand(&seed)-0.5f), 1.0f );
     }
 
@@ -213,7 +247,7 @@ GameApplication::~GameApplication()
 
 void GameApplication::LoadShaders()
 {
-    ps = kT::OGL3Shader::LoadFromFile( "ps.glsl", kT::OGL3Shader::PixelShader, kT::OGL3Shader::Profile4 );
+    ps = kT::OGL3Shader::LoadFromFile( "shaders/glsl/ps.glsl", kT::OGL3Shader::PixelShader, kT::OGL3Shader::Profile4 );
 
     if( ps->CompilationPassed() == false )
     {
@@ -221,7 +255,7 @@ void GameApplication::LoadShaders()
         throw ;
     }
     
-    vs = kT::OGL3Shader::LoadFromFile( "vs.glsl", kT::OGL3Shader::VertexShader, kT::OGL3Shader::Profile4  );
+    vs = kT::OGL3Shader::LoadFromFile( "shaders/glsl/vs.glsl", kT::OGL3Shader::VertexShader, kT::OGL3Shader::Profile4  );
 
     if( vs->CompilationPassed() == false )
     {
@@ -241,16 +275,16 @@ void GameApplication::LoadShaders()
         { 0, "in_Vertex", 0, kT::PixelFormat::RGBA32_FLOAT, 0, kT::InputElementClass::PerVertex, 0},
         { 0, "in_Normal", 0, kT::PixelFormat::RGBA32_FLOAT, sizeof(glm::vec4), kT::InputElementClass::PerVertex, 0},
         { 1, "in_Center", 0, kT::PixelFormat::RGBA32_FLOAT, 0, kT::InputElementClass::PerInstance, 1},
-        { 1, "in_Color",  0, kT::PixelFormat::RGBA32_FLOAT, sizeof(glm::vec4), kT::InputElementClass::PerInstance, 1}
+        //{ 1, "in_Color",  0, kT::PixelFormat::RGBA32_FLOAT, sizeof(glm::vec4), kT::InputElementClass::PerInstance, 1}
     };
 
     kT::InputLayoutDesc layoutDesc = {
-        4,
+        3,
         elementsDesc
     };
 
     myLayout = new kT::OGL3InputLayout( prog, layoutDesc );
-    myLayout->ComputeStrides( myStrides );
+	myLayout->ComputeStrides( myStrides );
     memset( myOffsets, 0, sizeof(size_t)*16 );
 
     myModelviewUniformIndex = prog->GetUniformIndexByName( "modelview" );
@@ -295,6 +329,7 @@ void GameApplication::Update( float dt )
 
 void GameApplication::Draw( float dt )
 {
+	//myContext->OMSetRenderTargets(1, textures, depthBuffer);
     glEnable( GL_DEPTH_TEST );
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 

@@ -14,6 +14,7 @@ namespace kT
     class OGL3Program;
     class OGL3HardwareBuffer;
     class OGL3InputLayout;
+    class OGL3Texture;
 }
 
 class GameApplication
