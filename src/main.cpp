@@ -1,4 +1,5 @@
 #include <GameApplication.hpp>
+#include <OGLVoxel.hpp>
 #include <D3DGameApplication.hpp>
 #include <D3DProceduralApp.hpp>
 #include <D3DTerrainApp.hpp>
@@ -55,6 +56,14 @@ void* runOGL( void* app )
 	return 0;
 }
 
+void* runOGLVoxel( void* app )
+{
+	OGLVoxel* oglapp = new OGLVoxel();
+	oglapp->Run();
+	delete oglapp;
+	return 0;
+}
+
 int main(int argc, char **argv)
 {
 	bool runBasicSamples = false;
@@ -101,7 +110,7 @@ int main(int argc, char **argv)
 		d3dUVRunner->Start();
 	}
 
-	bool runParticlesSample = true;
+	bool runParticlesSample = false;
 
 	kT::Thread* d3dParticlesRunner;
 	if (runParticlesSample)
@@ -109,6 +118,21 @@ int main(int argc, char **argv)
 		d3dParticlesRunner = new kT::Thread(runD3DParticles, 0);
 		d3dParticlesRunner->Start();
 	}
+
+    bool runOGLVoxelSample = true;
+
+	kT::Thread* oglVoxelRunner;
+	if (runOGLVoxelSample)
+	{
+		oglVoxelRunner = new kT::Thread(runOGLVoxel, 0);
+		oglVoxelRunner->Start();
+	}
+
+    if( runOGLVoxelSample )
+    {
+        oglVoxelRunner->Wait();
+        delete oglVoxelRunner;
+    }
 
 	if (runParticlesSample)
 	{

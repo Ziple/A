@@ -27,7 +27,7 @@
 #include <kT/Graphics/D3D11Device/D3D11Shader.hpp>
 #include <kT/Graphics/GraphicsDevice/ViewportDesc.hpp>
 
-void APIENTRY debugCallBack(
+static void APIENTRY debugCallBack(
 	GLenum source,
 	GLenum type,
 	GLenum severity,

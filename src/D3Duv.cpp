@@ -53,10 +53,14 @@ myRSState(0)
 
 	std::vector<vert> vertices;
 	vertices.resize(4);
-	vertices[0] = { kT::Vector3f32(-1.f, 1.f, 0.f ), kT::Vector2f32( 0.f, 0.f ) };
-	vertices[1] = { kT::Vector3f32(-1.f, -1.f, 0.f), kT::Vector2f32(0.f, 1.f) };
-	vertices[2] = { kT::Vector3f32(1.f, -1.f, 0.f), kT::Vector2f32(1.f, 1.f) };
-	vertices[3] = { kT::Vector3f32(1.f, 1.f, 0.f), kT::Vector2f32(1.f, 0.f) };
+	vertices[0].pos = kT::Vector3f32(-1.f, 1.f, 0.f );
+    vertices[0].uv = kT::Vector2f32( 0.f, 0.f );
+	vertices[1].pos = kT::Vector3f32(-1.f, -1.f, 0.f);
+    vertices[1].uv = kT::Vector2f32(0.f, 1.f);
+	vertices[2].pos = kT::Vector3f32(1.f, -1.f, 0.f);
+    vertices[2].uv = kT::Vector2f32(1.f, 1.f);
+	vertices[3].pos = kT::Vector3f32(1.f, 1.f, 0.f);
+    vertices[3].uv = kT::Vector2f32(1.f, 0.f);
 
 	// Generate the vertices
 	std::vector<unsigned> indices;
